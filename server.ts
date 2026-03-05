@@ -2,12 +2,34 @@ import express from "express";
 import { createServer as createViteServer } from "vite";
 import Database from "better-sqlite3";
 import path from "path";
+import fs from "fs";
+import cors from "cors";
 import { fileURLToPath } from "url";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const db = new Database("inquiries.db");
+console.log(`NODE_ENV: ${process.env.NODE_ENV}`);
+console.log(`PORT: ${process.env.PORT}`);
+
+const dbPath = process.env.SQLITE_DB_PATH || process.env.DATABASE_URL || path.join(__dirname, "inquiries.db");
+console.log(`Using database path: ${dbPath}`);
+
+// Ensure the directory for the database exists
+const dbDir = path.dirname(dbPath);
+if (!fs.existsSync(dbDir)) {
+  console.log(`Creating database directory: ${dbDir}`);
+  fs.mkdirSync(dbDir, { recursive: true });
+}
+
+let db: Database.Database;
+try {
+  db = new Database(dbPath);
+  console.log(`Connected to database at: ${dbPath}`);
+} catch (err) {
+  console.error("Failed to connect to database:", err);
+  process.exit(1);
+}
 
 // Initialize database
 db.exec(`
@@ -29,12 +51,19 @@ db.exec(`
 
 async function startServer() {
   const app = express();
-  const PORT = 3000;
+  const PORT = Number(process.env.PORT) || 3000;
 
+  app.use(cors());
   app.use(express.json());
 
+  // Request logger
+  app.use((req, res, next) => {
+    console.log(`${req.method} ${req.url}`);
+    next();
+  });
+
   // API Route for form submission
-  app.post("/api/inquiry", (req, res) => {
+  app.post(["/api/inquiry", "/api/inquiry/"], (req, res) => {
     const {
       studentName,
       dob,
@@ -48,6 +77,7 @@ async function startServer() {
       lastGrade
     } = req.body;
 
+    console.log("Received inquiry submission:", req.body);
     try {
       const stmt = db.prepare(`
         INSERT INTO inquiries (
