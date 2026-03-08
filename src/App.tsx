@@ -40,7 +40,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
-const Navbar = ({ onAdmissionClick }: { onAdmissionClick: () => void }) => {
+const Navbar = ({ onAdmissionClick, onContactClick, scrollToSection }: { onAdmissionClick: () => void, onContactClick: () => void, scrollToSection: (id: string) => void }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
 
@@ -53,160 +53,270 @@ const Navbar = ({ onAdmissionClick }: { onAdmissionClick: () => void }) => {
   }, []);
 
   const navLinks = [
-    { name: 'HOME', href: '#' },
-    { name: 'ABOUT US', href: '#about' },
-    { name: 'ACADEMICS', href: '#academics' },
+    { name: 'HOME', href: '#home', id: 'home' },
+    { name: 'ABOUT US', href: '#about', id: 'about' },
+    { name: 'ACADEMICS', href: '#academics', id: 'academics' },
     { name: 'ADMISSION', href: '#admission', isAdmission: true },
-    { name: 'LOCATION', href: 'https://share.google/3pYuB8P7mAg0tzSkk', external: true },
-    { name: 'CONTACT', href: '#contact' },
+    { name: 'DOCUMENTS', href: '#documents', id: 'documents' },
+    { name: 'GALLERY', href: '#gallery', id: 'gallery' },
+    { name: 'CONTACT US', href: '#contact', isContact: true },
   ];
 
   const handleParentLogin = () => {
-    // Redirect to Lead School Login as requested
     window.open('https://dev-identity.leadschool.in/accounts/ui/login?login_challenge=c4775aeaf0214bd3848ee458180d1469', '_blank');
   };
 
   return (
-    <nav className={`fixed w-full z-50 transition-all duration-300 ${isScrolled ? 'bg-white shadow-md py-2' : 'bg-white/90 backdrop-blur-sm py-4'}`}>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
-          <div className="flex-shrink-0 flex items-center">
-            <div className="flex items-center gap-2">
-              <div className="w-12 h-12 bg-red-600 rounded-full flex items-center justify-center text-white font-bold text-xl">V</div>
-              <div className="leading-tight">
-                <span className="block text-xl font-bold text-slate-800 tracking-tighter">VIMAL</span>
-                <span className="block text-xs font-semibold text-slate-500 tracking-widest">INTERNATIONAL SCHOOL</span>
+    <div className="fixed w-full z-50">
+      <nav className={`transition-all duration-300 ${isScrolled ? 'bg-white shadow-md py-2' : 'bg-white/95 backdrop-blur-sm py-3'}`}>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            <div className="flex-shrink-0 flex items-center">
+              <div className="flex items-center gap-3">
+                <img 
+                  src="https://ais-pre-bzoilgdxkje4osu7kkd5nu-491844608919.asia-southeast1.run.app/logo.png" 
+                  alt="Vimal International School Logo" 
+                  className="w-14 h-14 object-contain"
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none';
+                    const parent = e.currentTarget.parentElement;
+                    if (parent) {
+                      const fallback = document.createElement('div');
+                      fallback.className = "w-12 h-12 bg-red-600 rounded-full flex items-center justify-center text-white font-bold text-xl";
+                      fallback.innerText = "V";
+                      parent.prepend(fallback);
+                    }
+                  }}
+                />
+                <div className="leading-tight">
+                  <span className="block text-xl font-bold text-slate-800 tracking-tighter">VIMAL</span>
+                  <span className="block text-[10px] font-semibold text-slate-500 tracking-widest uppercase">INTERNATIONAL SCHOOL & JR. COLLEGE</span>
+                </div>
               </div>
             </div>
-          </div>
-          
-          <div className="hidden md:block">
-            <div className="ml-10 flex items-baseline space-x-6">
-              {navLinks.map((link) => (
-                <a
-                  key={link.name}
-                  href={link.href}
-                  target={link.external ? "_blank" : undefined}
-                  rel={link.external ? "noopener noreferrer" : undefined}
-                  onClick={(e) => {
-                    if (link.isAdmission) {
-                      e.preventDefault();
-                      onAdmissionClick();
-                    }
-                  }}
-                  className="text-slate-600 hover:text-red-600 px-3 py-2 rounded-md text-sm font-bold transition-colors cursor-pointer"
+            
+            <div className="hidden lg:block">
+              <div className="ml-10 flex items-baseline space-x-6">
+                {navLinks.map((link) => (
+                  <button
+                    key={link.name}
+                    type="button"
+                    onClick={() => {
+                      if (link.isAdmission) {
+                        onAdmissionClick();
+                      } else if (link.isContact) {
+                        onContactClick();
+                      } else if (link.id) {
+                        scrollToSection(link.id);
+                      }
+                    }}
+                    className="text-slate-600 hover:text-red-600 px-2 py-2 rounded-md text-xs font-bold transition-colors cursor-pointer tracking-wide uppercase"
+                  >
+                    {link.name}
+                  </button>
+                ))}
+                <button 
+                  onClick={handleParentLogin}
+                  className="bg-red-600 text-white px-4 py-2 rounded-md text-xs font-bold hover:bg-red-700 transition-colors shadow-lg shadow-red-600/20"
                 >
-                  {link.name}
-                </a>
-              ))}
-              <button 
-                onClick={handleParentLogin}
-                className="bg-red-600 text-white px-4 py-2 rounded-md text-sm font-bold hover:bg-red-700 transition-colors"
+                  PARENTS LOGIN
+                </button>
+              </div>
+            </div>
+
+            <div className="lg:hidden flex items-center">
+              <button
+                onClick={() => setIsOpen(!isOpen)}
+                className="inline-flex items-center justify-center p-2 rounded-md text-slate-600 hover:text-red-600 focus:outline-none"
               >
-                PARENTS LOGIN
+                {isOpen ? <X size={24} /> : <Menu size={24} />}
               </button>
             </div>
-          </div>
-
-          <div className="md:hidden flex items-center">
-            <button
-              onClick={() => setIsOpen(!isOpen)}
-              className="inline-flex items-center justify-center p-2 rounded-md text-slate-600 hover:text-red-600 focus:outline-none"
-            >
-              {isOpen ? <X size={24} /> : <Menu size={24} />}
-            </button>
           </div>
         </div>
-      </div>
 
-      {/* Mobile menu */}
-      <AnimatePresence>
-        {isOpen && (
-          <motion.div 
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            className="md:hidden bg-white border-t border-slate-100 overflow-hidden"
-          >
-            <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
-              {navLinks.map((link) => (
-                <a
-                  key={link.name}
-                  href={link.href}
-                  target={link.external ? "_blank" : undefined}
-                  rel={link.external ? "noopener noreferrer" : undefined}
-                  onClick={(e) => {
-                    if (link.isAdmission) {
-                      e.preventDefault();
-                      onAdmissionClick();
-                    }
-                    setIsOpen(false);
-                  }}
-                  className="text-slate-600 hover:text-red-600 block px-3 py-2 rounded-md text-base font-medium cursor-pointer"
+        <AnimatePresence>
+          {isOpen && (
+            <motion.div 
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className="lg:hidden bg-white border-t border-slate-100 overflow-hidden"
+            >
+              <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+                {navLinks.map((link) => (
+                  <button
+                    key={link.name}
+                    type="button"
+                    onClick={() => {
+                      setIsOpen(false);
+                      if (link.isAdmission) {
+                        onAdmissionClick();
+                      } else if (link.isContact) {
+                        onContactClick();
+                      } else if (link.id) {
+                        scrollToSection(link.id);
+                      }
+                    }}
+                    className="text-slate-600 hover:text-red-600 block w-full text-left px-3 py-2 rounded-md text-base font-medium cursor-pointer uppercase"
+                  >
+                    {link.name}
+                  </button>
+                ))}
+                <button 
+                  onClick={handleParentLogin}
+                  className="w-full text-left bg-red-600 text-white block px-3 py-2 rounded-md text-base font-medium"
                 >
-                  {link.name}
-                </a>
-              ))}
-              <button 
-                onClick={handleParentLogin}
-                className="w-full text-left bg-red-600 text-white block px-3 py-2 rounded-md text-base font-medium"
-              >
-                PARENTS LOGIN
-              </button>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </nav>
+                  PARENTS LOGIN
+                </button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </nav>
+    </div>
   );
 };
 
-const Hero = ({ onAdmissionClick }: { onAdmissionClick: () => void }) => {
+const Hero = ({ onAdmissionClick, onContactClick }: { onAdmissionClick: () => void, onContactClick: () => void }) => {
+  const [currentSlide, setCurrentSlide] = useState(0);
+  const slides = [
+    {
+      image: "https://content.jdmagicbox.com/v2/comp/nanded/l9/9999p2462.2462.240612053940.v5l9/catalogue/vimal-international-school-nanded-schools-4H946Abzxm.jpg",
+      title: "Admissions Open 2026-27",
+      subtitle: "Pre-Primary to Grade XII",
+      cta: "ADMISSION OPEN"
+    },
+    {
+      image: "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?q=80&w=2070&auto=format&fit=crop",
+      title: "Building Global Leaders",
+      subtitle: "With Yogic Values & Modern Education",
+      cta: "ADMISSION OPEN"
+    },
+    {
+      image: "https://images.unsplash.com/photo-1509062522246-3755977927d7?q=80&w=2132&auto=format&fit=crop",
+      title: "Excellence in Academics",
+      subtitle: "Nurturing Talent & Creativity",
+      cta: "ADMISSION OPEN"
+    }
+  ];
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % slides.length);
+    }, 5000);
+    return () => clearInterval(timer);
+  }, [slides.length]);
+
   return (
-    <div className="relative h-screen flex items-center justify-center overflow-hidden">
-      <div 
-        className="absolute inset-0 z-0"
-        style={{
-          backgroundImage: 'url("https://content.jdmagicbox.com/v2/comp/nanded/l9/9999p2462.2462.240612053940.v5l9/catalogue/vimal-international-school-nanded-schools-4H946Abzxm.jpg")',
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-        }}
-      >
-        <div className="absolute inset-0 bg-slate-900/40"></div>
-      </div>
+    <div id="home" className="relative h-screen flex items-center justify-center overflow-hidden pt-20 md:pt-0">
+      <AnimatePresence mode="wait">
+        <motion.div 
+          key={currentSlide}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 1 }}
+          className="absolute inset-0 z-0"
+          style={{
+            backgroundImage: `url("${slides[currentSlide].image}")`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+          }}
+        >
+          <div className="absolute inset-0 bg-slate-900/50"></div>
+        </motion.div>
+      </AnimatePresence>
       
-      <div className="relative z-10 text-center px-4 max-w-4xl">
-        <motion.h1 
-          initial={{ opacity: 0, y: 20 }}
+      <div className="relative z-10 text-center px-4 max-w-5xl">
+        <motion.div
+          key={`content-${currentSlide}`}
+          initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8 }}
-          className="text-4xl md:text-6xl font-bold text-white mb-6 tracking-tight"
         >
-          Vimal International School: Shaping Global Citizens
-        </motion.h1>
-        <motion.p 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.2 }}
-          className="text-xl text-white/90 mb-8 font-light"
-        >
-          Welcome to Vimal International School, where we provide a world-class education that empowers students to reach their full potential.
-        </motion.p>
-        <motion.div 
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.5, delay: 0.4 }}
-          className="flex flex-col sm:flex-row gap-4 justify-center"
-        >
-          <button 
-            onClick={onAdmissionClick}
-            className="bg-red-600 text-white px-8 py-3 rounded-full font-bold hover:bg-red-700 transition-all transform hover:scale-105"
-          >
-            ADMISSION OPEN
-          </button>
+          <span className="inline-block bg-red-600 text-white px-4 py-1 rounded-full text-sm font-bold mb-6 tracking-widest uppercase">
+            {slides[currentSlide].subtitle}
+          </span>
+          <h1 className="text-5xl md:text-8xl font-black text-white mb-8 tracking-tighter leading-none uppercase">
+            {slides[currentSlide].title.split(' ').map((word, i) => (
+              <span key={i} className={i % 2 !== 0 ? 'text-red-500' : ''}>{word} </span>
+            ))}
+          </h1>
+          <div className="flex flex-col sm:flex-row gap-6 justify-center mt-10">
+            <button 
+              type="button"
+              onClick={onAdmissionClick}
+              className="bg-red-600 text-white px-10 py-4 rounded-full font-black text-lg hover:bg-red-700 transition-all transform hover:scale-105 shadow-2xl shadow-red-600/40 uppercase tracking-tighter"
+            >
+              {slides[currentSlide].cta}
+            </button>
+            <button 
+              type="button"
+              onClick={onContactClick}
+              className="bg-white/10 backdrop-blur-md text-white border border-white/20 px-10 py-4 rounded-full font-black text-lg hover:bg-white/20 transition-all transform hover:scale-105 uppercase tracking-tighter"
+            >
+              CONTACT US
+            </button>
+          </div>
         </motion.div>
       </div>
+
+      {/* Slide Indicators */}
+      <div className="absolute bottom-10 left-1/2 -translate-x-1/2 z-20 flex gap-3">
+        {slides.map((_, i) => (
+          <button
+            key={i}
+            onClick={() => setCurrentSlide(i)}
+            className={`w-3 h-3 rounded-full transition-all ${currentSlide === i ? 'bg-red-600 w-10' : 'bg-white/30 hover:bg-white/50'}`}
+          />
+        ))}
+      </div>
     </div>
+  );
+};
+
+const DocumentsSection = ({ onApplyClick }: { onApplyClick: (type: string) => void }) => {
+  const documents = [
+    { title: "Transfer Certificate (TC)", icon: BookOpen },
+    { title: "Bonafide Certificate", icon: Award },
+    { title: "Character Certificate", icon: Users },
+    { title: "Fee Structure", icon: Building2 },
+    { title: "Academic Transcript", icon: GraduationCap },
+    { title: "Birth Certificate Copy", icon: School }
+  ];
+
+  return (
+    <section className="py-24 bg-slate-50" id="documents">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center mb-12">
+            <h2 className="text-sm font-bold text-red-600 tracking-widest uppercase mb-4">Student Services</h2>
+            <h3 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tighter uppercase mb-6 leading-none">
+              Apply for <span className="text-red-600">Documents</span>
+            </h3>
+            <p className="text-slate-600 text-lg leading-relaxed">
+              Need official school documents? Our streamlined online application process makes it easy for parents and students to request necessary paperwork.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {documents.map((doc, i) => (
+              <button 
+                key={i} 
+                type="button"
+                onClick={() => onApplyClick(doc.title)}
+                className="flex items-center gap-4 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:border-red-600 hover:shadow-lg transition-all cursor-pointer group w-full text-left"
+              >
+                <div className="w-12 h-12 bg-slate-100 text-slate-600 rounded-xl flex items-center justify-center group-hover:bg-red-100 group-hover:text-red-600 transition-colors">
+                  <doc.icon size={24} />
+                </div>
+                <span className="font-bold text-slate-700">{doc.title}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
   );
 };
 
@@ -360,14 +470,28 @@ const Milestones = () => {
   );
 };
 
-const Footer = ({ onAdmissionClick }: { onAdmissionClick: () => void }) => {
+const Footer = ({ onAdmissionClick, scrollToSection }: { onAdmissionClick: () => void, scrollToSection: (id: string) => void }) => {
   return (
     <footer className="bg-slate-950 text-white pt-20 pb-10" id="contact">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-16">
           <div>
-            <div className="flex items-center gap-2 mb-8">
-              <div className="w-10 h-10 bg-red-600 rounded-full flex items-center justify-center text-white font-bold text-lg">V</div>
+            <div className="flex items-center gap-3 mb-8">
+              <img 
+                src="https://ais-pre-bzoilgdxkje4osu7kkd5nu-491844608919.asia-southeast1.run.app/logo.png" 
+                alt="Vimal International School Logo" 
+                className="w-12 h-12 object-contain"
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none';
+                  const parent = e.currentTarget.parentElement;
+                  if (parent) {
+                    const fallback = document.createElement('div');
+                    fallback.className = "w-10 h-10 bg-red-600 rounded-full flex items-center justify-center text-white font-bold text-lg";
+                    fallback.innerText = "V";
+                    parent.prepend(fallback);
+                  }
+                }}
+              />
               <div className="leading-tight">
                 <span className="block text-lg font-bold tracking-tighter">VIMAL</span>
                 <span className="block text-[10px] font-semibold text-slate-500 tracking-widest uppercase">International School</span>
@@ -390,11 +514,14 @@ const Footer = ({ onAdmissionClick }: { onAdmissionClick: () => void }) => {
               <span className="absolute -bottom-2 left-0 w-12 h-1 bg-red-600"></span>
             </h3>
             <ul className="space-y-4 text-slate-400">
-              <li><a href="#" className="hover:text-red-500 transition-colors">Home</a></li>
-              <li><a href="#about" className="hover:text-red-500 transition-colors">About Us</a></li>
-              <li><a href="#academics" className="hover:text-red-500 transition-colors">Academics</a></li>
+              <li><button type="button" onClick={() => scrollToSection('home')} className="hover:text-red-500 transition-colors cursor-pointer">Home</button></li>
+              <li><button type="button" onClick={() => scrollToSection('about')} className="hover:text-red-500 transition-colors cursor-pointer">About Us</button></li>
+              <li><button type="button" onClick={() => scrollToSection('academics')} className="hover:text-red-500 transition-colors cursor-pointer">Academics</button></li>
+              <li><button type="button" onClick={() => scrollToSection('documents')} className="hover:text-red-500 transition-colors cursor-pointer">Documents</button></li>
+              <li><button type="button" onClick={() => scrollToSection('gallery')} className="hover:text-red-500 transition-colors cursor-pointer">Gallery</button></li>
               <li>
                 <button 
+                  type="button"
                   onClick={(e) => {
                     e.preventDefault();
                     onAdmissionClick();
@@ -423,7 +550,7 @@ const Footer = ({ onAdmissionClick }: { onAdmissionClick: () => void }) => {
                     rel="noopener noreferrer"
                     className="hover:text-red-500 transition-colors"
                   >
-                    Kinvat Road, Bhokar, Nanded, Maharashtra
+                    Trimurti Campus, Borgaon, Bhokar, Nanded, Maharashtra
                   </a>
                   <a 
                     href="https://share.google/3pYuB8P7mAg0tzSkk" 
@@ -441,7 +568,7 @@ const Footer = ({ onAdmissionClick }: { onAdmissionClick: () => void }) => {
               </li>
               <li className="flex gap-4">
                 <Mail className="text-red-600 shrink-0" size={20} />
-                <span>info@vimal.edu.in</span>
+                <span>vimalinternationalschool7@gmail.com</span>
               </li>
               <li className="flex gap-4">
                 <Clock className="text-red-600 shrink-0" size={20} />
@@ -754,21 +881,179 @@ const AdmissionModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => v
   );
 };
 
+const CertificateModal = ({ isOpen, onClose, initialType = '' }: { isOpen: boolean, onClose: () => void, initialType?: string }) => {
+  const [formData, setFormData] = useState({
+    studentName: '',
+    grNumber: '',
+    documentType: initialType,
+    reason: ''
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      setFormData(prev => ({ ...prev, documentType: initialType }));
+    }
+  }, [isOpen, initialType]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    try {
+      const response = await fetch('/api/certificate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          student_name: formData.studentName,
+          gr_number: formData.grNumber,
+          document_type: formData.documentType,
+          reason: formData.reason
+        })
+      });
+      if (response.ok) {
+        setIsSuccess(true);
+        setTimeout(() => {
+          setIsSuccess(false);
+          onClose();
+          setFormData({ studentName: '', grNumber: '', documentType: '', reason: '' });
+        }, 3000);
+      }
+    } catch (error) {
+      console.error('Error submitting certificate request:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <AnimatePresence>
+      {isOpen && (
+        <motion.div 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm"
+        >
+          <motion.div 
+            initial={{ scale: 0.9, opacity: 0, y: 20 }}
+            animate={{ scale: 1, opacity: 1, y: 0 }}
+            exit={{ scale: 0.9, opacity: 0, y: 20 }}
+            className="bg-white w-full max-w-lg rounded-[2.5rem] shadow-2xl overflow-hidden relative"
+          >
+            <button 
+              onClick={onClose}
+              className="absolute top-6 right-6 p-2 rounded-full bg-slate-100 text-slate-500 hover:bg-red-100 hover:text-red-600 transition-colors z-10"
+            >
+              <X size={20} />
+            </button>
+
+            <div className="p-8 md:p-12">
+              {isSuccess ? (
+                <div className="text-center py-12">
+                  <div className="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <Award size={40} />
+                  </div>
+                  <h3 className="text-2xl font-bold text-slate-800 mb-2">Request Submitted!</h3>
+                  <p className="text-slate-500">Your certificate request has been received. We will process it shortly.</p>
+                </div>
+              ) : (
+                <>
+                  <h3 className="text-2xl font-bold text-slate-900 mb-2">Document Request</h3>
+                  <p className="text-slate-500 text-sm mb-8">Apply for official school documents online.</p>
+                  
+                  <form onSubmit={handleSubmit} className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2">Student Name</label>
+                        <input 
+                          required
+                          value={formData.studentName}
+                          onChange={(e) => setFormData({...formData, studentName: e.target.value})}
+                          type="text" 
+                          className="w-full px-5 py-3 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-red-600 transition-all text-sm" 
+                          placeholder="Full Name" 
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2">GR Number</label>
+                        <input 
+                          required
+                          value={formData.grNumber}
+                          onChange={(e) => setFormData({...formData, grNumber: e.target.value})}
+                          type="text" 
+                          className="w-full px-5 py-3 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-red-600 transition-all text-sm" 
+                          placeholder="GR Number" 
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2">Document Type</label>
+                      <select 
+                        required
+                        value={formData.documentType}
+                        onChange={(e) => setFormData({...formData, documentType: e.target.value})}
+                        className="w-full px-5 py-3 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-red-600 transition-all text-sm"
+                      >
+                        <option value="">Select Document</option>
+                        <option value="Transfer Certificate (TC)">Transfer Certificate (TC)</option>
+                        <option value="Bonafide Certificate">Bonafide Certificate</option>
+                        <option value="Character Certificate">Character Certificate</option>
+                        <option value="Fee Structure">Fee Structure</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2">Reason</label>
+                      <textarea 
+                        value={formData.reason}
+                        onChange={(e) => setFormData({...formData, reason: e.target.value})}
+                        className="w-full px-5 py-3 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-red-600 transition-all h-24 text-sm" 
+                        placeholder="Reason for request"
+                      ></textarea>
+                    </div>
+                    <button 
+                      disabled={isSubmitting}
+                      type="submit"
+                      className="w-full bg-slate-900 text-white font-black py-4 rounded-2xl hover:bg-red-600 transition-all shadow-xl shadow-slate-900/20 uppercase tracking-widest text-sm"
+                    >
+                      {isSubmitting ? 'SUBMITTING...' : 'SUBMIT REQUEST'}
+                    </button>
+                  </form>
+                </>
+              )}
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+};
+
 const AdminDashboard = () => {
   const [inquiries, setInquiries] = useState<any[]>([]);
+  const [certificates, setCertificates] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [password, setPassword] = useState('');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [activeTab, setActiveTab] = useState<'inquiries' | 'certificates'>('inquiries');
   const navigate = useNavigate();
 
-  const fetchInquiries = async () => {
+  const fetchData = async () => {
+    setLoading(true);
     try {
-      const response = await fetch('/api/inquiries');
-      const data = await response.json();
-      setInquiries(data);
+      const [inqRes, certRes] = await Promise.all([
+        fetch('/api/inquiries'),
+        fetch('/api/certificates')
+      ]);
+      const [inqData, certData] = await Promise.all([
+        inqRes.json(),
+        certRes.json()
+      ]);
+      setInquiries(inqData);
+      setCertificates(certData);
     } catch (error) {
-      console.error('Error fetching inquiries:', error);
+      console.error('Error fetching data:', error);
     } finally {
       setLoading(false);
     }
@@ -776,13 +1061,12 @@ const AdminDashboard = () => {
 
   useEffect(() => {
     if (isAuthenticated) {
-      fetchInquiries();
+      fetchData();
     }
   }, [isAuthenticated]);
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    // Simple password for demo purposes
     if (password === 'vimaladmin2026') {
       setIsAuthenticated(true);
     } else {
@@ -790,22 +1074,27 @@ const AdminDashboard = () => {
     }
   };
 
-  const handleDelete = async (id: number) => {
+  const handleDeleteInquiry = async (id: number) => {
     if (!window.confirm('Are you sure you want to delete this inquiry?')) return;
-    
     try {
-      const response = await fetch(`/api/inquiries/${id}`, {
-        method: 'DELETE'
-      });
-      
+      const response = await fetch(`/api/inquiries/${id}`, { method: 'DELETE' });
       if (response.ok) {
         setInquiries(prev => prev.filter(i => i.id !== id));
-      } else {
-        alert('Failed to delete inquiry');
       }
     } catch (error) {
       console.error('Error deleting inquiry:', error);
-      alert('An error occurred while deleting');
+    }
+  };
+
+  const handleDeleteCertificate = async (id: number) => {
+    if (!window.confirm('Are you sure you want to delete this certificate request?')) return;
+    try {
+      const response = await fetch(`/api/certificate/${id}`, { method: 'DELETE' });
+      if (response.ok) {
+        setCertificates(prev => prev.filter(c => c.id !== id));
+      }
+    } catch (error) {
+      console.error('Error deleting certificate request:', error);
     }
   };
 
@@ -813,6 +1102,12 @@ const AdminDashboard = () => {
     inquiry.student_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     inquiry.father_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     inquiry.email.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const filteredCertificates = certificates.filter(cert => 
+    cert.student_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    cert.gr_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    cert.document_type.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   if (!isAuthenticated) {
@@ -824,7 +1119,7 @@ const AdminDashboard = () => {
               <School size={32} />
             </div>
             <h2 className="text-2xl font-bold text-slate-800">School Admin Login</h2>
-            <p className="text-slate-500 text-sm mt-2">Access the admission inquiry dashboard</p>
+            <p className="text-slate-500 text-sm mt-2">Access the school management dashboard</p>
           </div>
           <form onSubmit={handleLogin} className="space-y-6">
             <div>
@@ -859,14 +1154,13 @@ const AdminDashboard = () => {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      {/* Admin Header */}
       <header className="bg-white border-b border-slate-200 sticky top-0 z-30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-red-600 rounded-full flex items-center justify-center text-white font-bold text-lg">V</div>
             <div className="leading-tight">
               <span className="block text-lg font-bold text-slate-800 tracking-tighter">VIMAL ADMIN</span>
-              <span className="block text-[10px] font-semibold text-slate-500 tracking-widest uppercase">Inquiry Dashboard</span>
+              <span className="block text-[10px] font-semibold text-slate-500 tracking-widest uppercase">Management Dashboard</span>
             </div>
           </div>
           <div className="flex items-center gap-4">
@@ -887,7 +1181,21 @@ const AdminDashboard = () => {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        {/* Dashboard Stats */}
+        <div className="flex gap-4 mb-8">
+          <button 
+            onClick={() => setActiveTab('inquiries')}
+            className={`px-6 py-3 rounded-2xl font-bold transition-all ${activeTab === 'inquiries' ? 'bg-red-600 text-white shadow-lg shadow-red-600/20' : 'bg-white text-slate-600 hover:bg-slate-100'}`}
+          >
+            Admission Inquiries ({inquiries.length})
+          </button>
+          <button 
+            onClick={() => setActiveTab('certificates')}
+            className={`px-6 py-3 rounded-2xl font-bold transition-all ${activeTab === 'certificates' ? 'bg-red-600 text-white shadow-lg shadow-red-600/20' : 'bg-white text-slate-600 hover:bg-slate-100'}`}
+          >
+            Certificate Requests ({certificates.length})
+          </button>
+        </div>
+
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
           <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
             <div className="flex items-center justify-between mb-4">
@@ -896,8 +1204,8 @@ const AdminDashboard = () => {
               </div>
               <span className="text-xs font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded-full">TOTAL</span>
             </div>
-            <div className="text-3xl font-bold text-slate-800">{inquiries.length}</div>
-            <div className="text-sm text-slate-500 mt-1">Total Inquiries Received</div>
+            <div className="text-3xl font-bold text-slate-800">{activeTab === 'inquiries' ? inquiries.length : certificates.length}</div>
+            <div className="text-sm text-slate-500 mt-1">Total {activeTab === 'inquiries' ? 'Inquiries' : 'Requests'}</div>
           </div>
           <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
             <div className="flex items-center justify-between mb-4">
@@ -907,37 +1215,34 @@ const AdminDashboard = () => {
               <span className="text-xs font-bold text-red-600 bg-red-50 px-2 py-1 rounded-full">RECENT</span>
             </div>
             <div className="text-3xl font-bold text-slate-800">
-              {inquiries.filter(i => {
+              {(activeTab === 'inquiries' ? inquiries : certificates).filter(i => {
                 const date = new Date(i.created_at);
                 const today = new Date();
                 return date.toDateString() === today.toDateString();
               }).length}
             </div>
-            <div className="text-sm text-slate-500 mt-1">Inquiries Received Today</div>
+            <div className="text-sm text-slate-500 mt-1">Received Today</div>
           </div>
           <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
             <div className="flex items-center justify-between mb-4">
               <div className="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-xl flex items-center justify-center">
                 <GraduationCap size={24} />
               </div>
-              <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full">GRADES</span>
+              <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full">STATUS</span>
             </div>
-            <div className="text-3xl font-bold text-slate-800">
-              {new Set(inquiries.map(i => i.grade)).size}
-            </div>
-            <div className="text-sm text-slate-500 mt-1">Unique Grades Interested</div>
+            <div className="text-3xl font-bold text-slate-800">Active</div>
+            <div className="text-sm text-slate-500 mt-1">System Online</div>
           </div>
         </div>
 
-        {/* Search and Table */}
         <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
           <div className="p-6 border-b border-slate-100 flex flex-col md:flex-row justify-between items-center gap-4">
-            <h3 className="text-xl font-bold text-slate-800">Admission Inquiries</h3>
+            <h3 className="text-xl font-bold text-slate-800">{activeTab === 'inquiries' ? 'Admission Inquiries' : 'Certificate Requests'}</h3>
             <div className="relative w-full md:w-72">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
               <input 
                 type="text" 
-                placeholder="Search inquiries..."
+                placeholder={`Search ${activeTab}...`}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full pl-10 pr-4 py-2 rounded-xl border border-slate-200 focus:outline-none focus:border-red-600 transition-colors text-sm"
@@ -946,101 +1251,86 @@ const AdminDashboard = () => {
           </div>
 
           <div className="overflow-x-auto">
-            <table className="w-full text-left">
-              <thead>
-                <tr className="bg-slate-50 text-slate-500 text-xs font-bold uppercase tracking-wider">
-                  <th className="px-6 py-4">Student Name</th>
-                  <th className="px-6 py-4">Grade</th>
-                  <th className="px-6 py-4">Parent Info</th>
-                  <th className="px-6 py-4">Contact</th>
-                  <th className="px-6 py-4">Date</th>
-                  <th className="px-6 py-4 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {loading ? (
-                  <tr>
-                    <td colSpan={6} className="px-6 py-12 text-center text-slate-500">Loading inquiries...</td>
+            {activeTab === 'inquiries' ? (
+              <table className="w-full text-left">
+                <thead>
+                  <tr className="bg-slate-50 text-slate-500 text-xs font-bold uppercase tracking-wider">
+                    <th className="px-6 py-4">Student Name</th>
+                    <th className="px-6 py-4">Grade</th>
+                    <th className="px-6 py-4">Parent Info</th>
+                    <th className="px-6 py-4">Contact</th>
+                    <th className="px-6 py-4">Date</th>
+                    <th className="px-6 py-4 text-right">Actions</th>
                   </tr>
-                ) : filteredInquiries.length === 0 ? (
-                  <tr>
-                    <td colSpan={6} className="px-6 py-12 text-center text-slate-500">No inquiries found.</td>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {loading ? (
+                    <tr><td colSpan={6} className="px-6 py-12 text-center text-slate-500">Loading...</td></tr>
+                  ) : filteredInquiries.length === 0 ? (
+                    <tr><td colSpan={6} className="px-6 py-12 text-center text-slate-500">No records found.</td></tr>
+                  ) : (
+                    filteredInquiries.map((inquiry) => (
+                      <tr key={inquiry.id} className="hover:bg-slate-50 transition-colors">
+                        <td className="px-6 py-4">
+                          <div className="font-bold text-slate-800">{inquiry.student_name}</div>
+                          <div className="text-xs text-slate-500">DOB: {inquiry.dob}</div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className="px-2 py-1 bg-red-100 text-red-600 rounded text-[10px] font-bold uppercase">{inquiry.grade}</span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="text-sm text-slate-700 font-medium">F: {inquiry.father_name}</div>
+                          <div className="text-sm text-slate-700 font-medium">M: {inquiry.mother_name}</div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="text-sm text-slate-600">{inquiry.contact_number}</div>
+                          <div className="text-sm text-slate-600">{inquiry.email}</div>
+                        </td>
+                        <td className="px-6 py-4 text-sm text-slate-500">{new Date(inquiry.created_at).toLocaleDateString()}</td>
+                        <td className="px-6 py-4 text-right">
+                          <button onClick={() => handleDeleteInquiry(inquiry.id)} className="p-2 text-slate-400 hover:text-red-600 transition-colors"><Trash2 size={18} /></button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            ) : (
+              <table className="w-full text-left">
+                <thead>
+                  <tr className="bg-slate-50 text-slate-500 text-xs font-bold uppercase tracking-wider">
+                    <th className="px-6 py-4">Student Name</th>
+                    <th className="px-6 py-4">GR Number</th>
+                    <th className="px-6 py-4">Document Type</th>
+                    <th className="px-6 py-4">Reason</th>
+                    <th className="px-6 py-4">Date</th>
+                    <th className="px-6 py-4 text-right">Actions</th>
                   </tr>
-                ) : (
-                  filteredInquiries.map((inquiry) => (
-                    <tr key={inquiry.id} className="hover:bg-slate-50 transition-colors">
-                      <td className="px-6 py-4">
-                        <div className="font-bold text-slate-800">{inquiry.student_name}</div>
-                        <div className="text-xs text-slate-500">DOB: {inquiry.dob}</div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className="px-2 py-1 bg-red-100 text-red-600 rounded text-[10px] font-bold uppercase">
-                          {inquiry.grade}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="text-sm text-slate-700 font-medium">F: {inquiry.father_name}</div>
-                        <div className="text-sm text-slate-700 font-medium">M: {inquiry.mother_name}</div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-2 text-sm text-slate-600">
-                          <PhoneIcon size={14} className="text-slate-400" />
-                          {inquiry.contact_number}
-                        </div>
-                        <div className="flex items-center gap-2 text-sm text-slate-600">
-                          <MailIcon size={14} className="text-slate-400" />
-                          {inquiry.email}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 text-sm text-slate-500">
-                        {new Date(inquiry.created_at).toLocaleDateString()}
-                      </td>
-                      <td className="px-6 py-4 text-right">
-                        <div className="flex justify-end gap-2">
-                          <button className="p-2 text-slate-400 hover:text-blue-600 transition-colors" title="View Details">
-                            <Eye size={18} />
-                          </button>
-                          <button 
-                            onClick={() => handleDelete(inquiry.id)}
-                            className="p-2 text-slate-400 hover:text-red-600 transition-colors" 
-                            title="Delete"
-                          >
-                            <Trash2 size={18} />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-          
-          <div className="p-6 bg-slate-50 border-t border-slate-100 flex justify-between items-center">
-            <div className="text-sm text-slate-500">
-              Showing {filteredInquiries.length} of {inquiries.length} inquiries
-            </div>
-            <button 
-              onClick={() => {
-                const csv = [
-                  ['ID', 'Student Name', 'DOB', 'Gender', 'Grade', 'Father Name', 'Mother Name', 'Contact', 'Email', 'Previous School', 'Last Grade', 'Date'],
-                  ...inquiries.map(i => [i.id, i.student_name, i.dob, i.gender, i.grade, i.father_name, i.mother_name, i.contact_number, i.email, i.previous_school, i.last_grade, i.created_at])
-                ].map(e => e.join(",")).join("\n");
-                
-                const blob = new Blob([csv], { type: 'text/csv' });
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.setAttribute('hidden', '');
-                a.setAttribute('href', url);
-                a.setAttribute('download', 'inquiries.csv');
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-              }}
-              className="flex items-center gap-2 text-red-600 font-bold text-sm hover:underline"
-            >
-              <Download size={16} /> EXPORT TO CSV
-            </button>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {loading ? (
+                    <tr><td colSpan={6} className="px-6 py-12 text-center text-slate-500">Loading...</td></tr>
+                  ) : filteredCertificates.length === 0 ? (
+                    <tr><td colSpan={6} className="px-6 py-12 text-center text-slate-500">No records found.</td></tr>
+                  ) : (
+                    filteredCertificates.map((cert) => (
+                      <tr key={cert.id} className="hover:bg-slate-50 transition-colors">
+                        <td className="px-6 py-4 font-bold text-slate-800">{cert.student_name}</td>
+                        <td className="px-6 py-4 text-sm text-slate-600">{cert.gr_number}</td>
+                        <td className="px-6 py-4">
+                          <span className="px-2 py-1 bg-blue-100 text-blue-600 rounded text-[10px] font-bold uppercase">{cert.document_type}</span>
+                        </td>
+                        <td className="px-6 py-4 text-sm text-slate-600 max-w-xs truncate">{cert.reason}</td>
+                        <td className="px-6 py-4 text-sm text-slate-500">{new Date(cert.created_at).toLocaleDateString()}</td>
+                        <td className="px-6 py-4 text-right">
+                          <button onClick={() => handleDeleteCertificate(cert.id)} className="p-2 text-slate-400 hover:text-red-600 transition-colors"><Trash2 size={18} /></button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            )}
           </div>
         </div>
       </main>
@@ -1048,59 +1338,103 @@ const AdminDashboard = () => {
   );
 };
 
-const MainSite = ({ onAdmissionClick }: { onAdmissionClick: () => void }) => {
+const MainSite = ({ onAdmissionClick, onContactClick, onApplyClick, scrollToSection }: { onAdmissionClick: () => void, onContactClick: () => void, onApplyClick: (type: string) => void, scrollToSection: (id: string) => void }) => {
+  const handleViewGallery = () => {
+    // Open gallery in a new window
+    window.open('https://photos.app.goo.gl/your-gallery-link', '_blank');
+  };
+
   return (
     <div className="min-h-screen bg-white font-sans selection:bg-red-100 selection:text-red-600">
-      <Navbar onAdmissionClick={onAdmissionClick} />
+      <Navbar onAdmissionClick={onAdmissionClick} onContactClick={onContactClick} scrollToSection={scrollToSection} />
       <main>
-        <Hero onAdmissionClick={onAdmissionClick} />
+        <Hero onAdmissionClick={onAdmissionClick} onContactClick={onContactClick} />
         <Features />
         <WelcomeSection />
         <Milestones />
+        <DocumentsSection onApplyClick={onApplyClick} />
         
-        {/* Brochure Section */}
-        <section className="py-20 bg-slate-50">
+        {/* School Brochure Section */}
+        <section className="py-24 bg-slate-50" id="gallery">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-6">
-                <div className="bg-red-100 p-4 rounded-xl text-red-600">
-                  <BookOpen size={32} />
+            <div className="text-center mb-16">
+              <h2 className="text-sm font-bold text-red-600 tracking-widest uppercase mb-4">School Resources</h2>
+              <h3 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tighter uppercase">School Brochure & Gallery</h3>
+              <div className="w-20 h-1.5 bg-red-600 mx-auto mt-6"></div>
+            </div>
+
+            <div className="max-w-2xl mx-auto">
+              <div className="bg-white p-10 md:p-16 rounded-[3rem] shadow-2xl border border-slate-100 flex flex-col items-center text-center relative overflow-hidden group">
+                <div className="absolute top-0 left-0 w-full h-2 bg-red-600"></div>
+                <div className="w-24 h-24 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mb-8 group-hover:scale-110 transition-transform duration-500">
+                  <Building2 size={48} />
                 </div>
-                <div>
-                  <h4 className="text-xl font-bold text-slate-800 mb-1">Yearly Magazine</h4>
-                  <p className="text-slate-500 text-sm mb-4">Have a look at our yearly magazine!</p>
-                  <button className="text-red-600 font-bold text-sm hover:underline">COMING SOON</button>
-                </div>
-              </div>
-              <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-6">
-                <div className="bg-blue-100 p-4 rounded-xl text-blue-600">
-                  <Building2 size={32} />
-                </div>
-                <div>
-                  <h4 className="text-xl font-bold text-slate-800 mb-1">School Brochure</h4>
-                  <p className="text-slate-500 text-sm mb-4">Have a look at our school brochure!</p>
-                  <button className="text-blue-600 font-bold text-sm hover:underline">COMING SOON</button>
+                <h4 className="text-3xl font-black text-slate-900 mb-4 tracking-tight">SCHOOL BROCHURE</h4>
+                <p className="text-slate-500 text-lg mb-10 leading-relaxed">
+                  Explore our school's highlights, world-class facilities, and academic excellence through our photo gallery.
+                </p>
+                <div className="flex flex-col sm:flex-row gap-4 w-full justify-center">
+                  <button 
+                    onClick={handleViewGallery}
+                    className="max-w-md w-full bg-red-600 text-white font-black py-5 rounded-2xl hover:bg-red-700 transition-all shadow-xl shadow-red-600/20 uppercase tracking-widest text-sm flex items-center justify-center gap-2"
+                  >
+                    <Eye size={20} />
+                    VIEW GALLERY
+                  </button>
                 </div>
               </div>
             </div>
           </div>
         </section>
       </main>
-      <Footer onAdmissionClick={onAdmissionClick} />
+      <Footer onAdmissionClick={onAdmissionClick} scrollToSection={scrollToSection} />
     </div>
   );
 };
 
 export default function App() {
   const [showAdmission, setShowAdmission] = useState(false);
+  const [showCertificate, setShowCertificate] = useState(false);
+  const [selectedDocType, setSelectedDocType] = useState('');
+
+  const scrollToSection = (id: string) => {
+    const section = document.getElementById(id);
+    if (section) {
+      const headerOffset = 80;
+      const elementPosition = section.getBoundingClientRect().top;
+      const offsetPosition = elementPosition + window.scrollY - headerOffset;
+
+      window.scrollTo({
+        top: offsetPosition,
+        behavior: 'smooth'
+      });
+    }
+  };
+
+  const handleApplyClick = (type: string) => {
+    setSelectedDocType(type);
+    setShowCertificate(true);
+  };
 
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<MainSite onAdmissionClick={() => setShowAdmission(true)} />} />
+        <Route path="/" element={
+          <MainSite 
+            onAdmissionClick={() => setShowAdmission(true)} 
+            onContactClick={() => scrollToSection('contact')}
+            onApplyClick={handleApplyClick}
+            scrollToSection={scrollToSection}
+          />
+        } />
         <Route path="/admin" element={<AdminDashboard />} />
       </Routes>
       <AdmissionModal isOpen={showAdmission} onClose={() => setShowAdmission(false)} />
+      <CertificateModal 
+        isOpen={showCertificate} 
+        onClose={() => setShowCertificate(false)} 
+        initialType={selectedDocType}
+      />
     </Router>
   );
 }

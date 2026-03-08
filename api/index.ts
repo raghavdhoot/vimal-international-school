@@ -39,6 +39,16 @@ async function initDb() {
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `;
+    await sql`
+      CREATE TABLE IF NOT EXISTS certificates (
+        id SERIAL PRIMARY KEY,
+        student_name TEXT,
+        gr_number TEXT,
+        document_type TEXT,
+        reason TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `;
     console.log("Database table initialized (Postgres)");
     dbInitialized = true;
     return { success: true, message: "Database table initialized successfully" };
@@ -90,6 +100,51 @@ app.get("/api/init-db", async (req, res) => {
       message: "Failed to initialize database",
       error: result.error
     });
+  }
+});
+
+// API Route for certificate request
+app.post("/api/certificate", async (req, res) => {
+  await initDb();
+  const { student_name, gr_number, document_type, reason } = req.body;
+  
+  if (!student_name || !gr_number || !document_type) {
+    return res.status(400).json({ error: "Missing required fields" });
+  }
+
+  try {
+    const result = await sql`
+      INSERT INTO certificates (student_name, gr_number, document_type, reason)
+      VALUES (${student_name}, ${gr_number}, ${document_type}, ${reason})
+      RETURNING *
+    `;
+    res.status(201).json(result.rows[0]);
+  } catch (err: any) {
+    console.error("Error saving certificate request:", err);
+    res.status(500).json({ error: "Failed to save request", details: err.message });
+  }
+});
+
+// GET all certificate requests (Admin)
+app.get("/api/certificates", async (req, res) => {
+  await initDb();
+  try {
+    const result = await sql`SELECT * FROM certificates ORDER BY created_at DESC`;
+    res.json(result.rows);
+  } catch (err: any) {
+    res.status(500).json({ error: "Failed to fetch certificate requests" });
+  }
+});
+
+// DELETE certificate request
+app.delete("/api/certificate/:id", async (req, res) => {
+  await initDb();
+  const { id } = req.params;
+  try {
+    await sql`DELETE FROM certificates WHERE id = ${id}`;
+    res.json({ success: true });
+  } catch (err: any) {
+    res.status(500).json({ error: "Failed to delete request" });
   }
 });
 
