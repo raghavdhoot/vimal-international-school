@@ -1,5 +1,4 @@
 import express from "express";
-import { createServer as createViteServer } from "vite";
 import { sql } from "@vercel/postgres";
 import path from "path";
 import fs from "fs";
@@ -10,13 +9,19 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 console.log(`NODE_ENV: ${process.env.NODE_ENV}`);
-console.log(`PORT: ${process.env.PORT}`);
+console.log(`VERCEL: ${process.env.VERCEL}`);
 
 let dbInitialized = false;
 
 // Initialize database table (Postgres)
 async function initDb() {
-  if (dbInitialized) return true;
+  if (dbInitialized) return { success: true, message: "Already initialized" };
+  
+  if (!process.env.POSTGRES_URL) {
+    console.error("POSTGRES_URL is missing!");
+    return { success: false, error: "POSTGRES_URL environment variable is missing. Please connect your database in Vercel Storage tab." };
+  }
+
   try {
     await sql`
       CREATE TABLE IF NOT EXISTS inquiries (
@@ -36,35 +41,36 @@ async function initDb() {
     `;
     console.log("Database table initialized (Postgres)");
     dbInitialized = true;
-    return true;
-  } catch (err) {
+    return { success: true, message: "Database table initialized successfully" };
+  } catch (err: any) {
     console.error("Failed to initialize database table:", err);
-    return false;
+    return { success: false, error: err.message || "Unknown database error" };
   }
 }
 
-// Call initDb on startup
-initDb();
+// Call initDb on startup (non-blocking)
+initDb().catch(console.error);
 
 const app = express();
 
 // Manual init route
 app.get("/api/init-db", async (req, res) => {
-  const success = await initDb();
-  if (success) {
+  const result = await initDb();
+  if (result.success) {
     res.json({ 
       success: true, 
-      message: "Database initialized successfully",
+      message: result.message,
       env: {
         hasUrl: !!process.env.POSTGRES_URL,
-        nodeEnv: process.env.NODE_ENV
+        nodeEnv: process.env.NODE_ENV,
+        isVercel: !!process.env.VERCEL
       }
     });
   } else {
     res.status(500).json({ 
       success: false, 
       message: "Failed to initialize database",
-      error: "Check if POSTGRES_URL is set in Vercel Environment Variables"
+      error: result.error
     });
   }
 });
@@ -146,6 +152,7 @@ app.delete("/api/inquiries/:id", async (req, res) => {
 async function startServer() {
   // Only run Vite and listen to a port if we are NOT on Vercel
   if (process.env.NODE_ENV !== "production" && !process.env.VERCEL) {
+    const { createServer: createViteServer } = await import("vite");
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: "spa",

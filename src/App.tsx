@@ -534,7 +534,8 @@ const AdmissionModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => v
           onClose();
         }, 3000);
       } else {
-        alert('Something went wrong. Please try again.');
+        const errorData = await response.json().catch(() => ({}));
+        alert(`Something went wrong: ${errorData.error || errorData.message || 'Please try again.'}`);
       }
     } catch (error) {
       console.error('Submission error:', error);
