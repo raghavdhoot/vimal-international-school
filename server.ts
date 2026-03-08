@@ -12,8 +12,11 @@ const __dirname = path.dirname(__filename);
 console.log(`NODE_ENV: ${process.env.NODE_ENV}`);
 console.log(`PORT: ${process.env.PORT}`);
 
+let dbInitialized = false;
+
 // Initialize database table (Postgres)
 async function initDb() {
+  if (dbInitialized) return true;
   try {
     await sql`
       CREATE TABLE IF NOT EXISTS inquiries (
@@ -32,6 +35,7 @@ async function initDb() {
       )
     `;
     console.log("Database table initialized (Postgres)");
+    dbInitialized = true;
     return true;
   } catch (err) {
     console.error("Failed to initialize database table:", err);
@@ -48,9 +52,20 @@ const app = express();
 app.get("/api/init-db", async (req, res) => {
   const success = await initDb();
   if (success) {
-    res.json({ success: true, message: "Database initialized successfully" });
+    res.json({ 
+      success: true, 
+      message: "Database initialized successfully",
+      env: {
+        hasUrl: !!process.env.POSTGRES_URL,
+        nodeEnv: process.env.NODE_ENV
+      }
+    });
   } else {
-    res.status(500).json({ success: false, message: "Failed to initialize database" });
+    res.status(500).json({ 
+      success: false, 
+      message: "Failed to initialize database",
+      error: "Check if POSTGRES_URL is set in Vercel Environment Variables"
+    });
   }
 });
 
@@ -65,6 +80,9 @@ app.use((req, res, next) => {
 
 // API Route for form submission
 app.post(["/api/inquiry", "/api/inquiry/"], async (req, res) => {
+  // Ensure DB is initialized before processing
+  await initDb();
+  
   const {
     studentName,
     dob,
