@@ -1032,26 +1032,32 @@ const CertificateModal = ({ isOpen, onClose, initialType = '' }: { isOpen: boole
 const AdminDashboard = () => {
   const [inquiries, setInquiries] = useState<any[]>([]);
   const [certificates, setCertificates] = useState<any[]>([]);
+  const [gallery, setGallery] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [password, setPassword] = useState('');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [activeTab, setActiveTab] = useState<'inquiries' | 'certificates'>('inquiries');
+  const [activeTab, setActiveTab] = useState<'inquiries' | 'certificates' | 'gallery'>('inquiries');
+  const [newImage, setNewImage] = useState({ url: '', caption: '', category: 'General' });
+  const [isAddingImage, setIsAddingImage] = useState(false);
   const navigate = useNavigate();
 
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [inqRes, certRes] = await Promise.all([
+      const [inqRes, certRes, galRes] = await Promise.all([
         fetch('/api/inquiries'),
-        fetch('/api/certificates')
+        fetch('/api/certificates'),
+        fetch('/api/gallery')
       ]);
-      const [inqData, certData] = await Promise.all([
+      const [inqData, certData, galData] = await Promise.all([
         inqRes.json(),
-        certRes.json()
+        certRes.json(),
+        galRes.json()
       ]);
       setInquiries(inqData);
       setCertificates(certData);
+      setGallery(galData);
     } catch (error) {
       console.error('Error fetching data:', error);
     } finally {
@@ -1098,6 +1104,39 @@ const AdminDashboard = () => {
     }
   };
 
+  const handleAddImage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsAddingImage(true);
+    try {
+      const response = await fetch('/api/gallery', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newImage)
+      });
+      if (response.ok) {
+        const added = await response.json();
+        setGallery(prev => [added, ...prev]);
+        setNewImage({ url: '', caption: '', category: 'General' });
+      }
+    } catch (error) {
+      console.error('Error adding image:', error);
+    } finally {
+      setIsAddingImage(false);
+    }
+  };
+
+  const handleDeleteImage = async (id: number) => {
+    if (!window.confirm('Are you sure you want to delete this image?')) return;
+    try {
+      const response = await fetch(`/api/gallery/${id}`, { method: 'DELETE' });
+      if (response.ok) {
+        setGallery(prev => prev.filter(img => img.id !== id));
+      }
+    } catch (error) {
+      console.error('Error deleting image:', error);
+    }
+  };
+
   const filteredInquiries = inquiries.filter(inquiry => 
     inquiry.student_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     inquiry.father_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -1108,6 +1147,11 @@ const AdminDashboard = () => {
     cert.student_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     cert.gr_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
     cert.document_type.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const filteredGallery = gallery.filter(img => 
+    (img.caption || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (img.category || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   if (!isAuthenticated) {
@@ -1194,6 +1238,12 @@ const AdminDashboard = () => {
           >
             Certificate Requests ({certificates.length})
           </button>
+          <button 
+            onClick={() => setActiveTab('gallery')}
+            className={`px-6 py-3 rounded-2xl font-bold transition-all ${activeTab === 'gallery' ? 'bg-red-600 text-white shadow-lg shadow-red-600/20' : 'bg-white text-slate-600 hover:bg-slate-100'}`}
+          >
+            Gallery Management ({gallery.length})
+          </button>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
@@ -1204,8 +1254,12 @@ const AdminDashboard = () => {
               </div>
               <span className="text-xs font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded-full">TOTAL</span>
             </div>
-            <div className="text-3xl font-bold text-slate-800">{activeTab === 'inquiries' ? inquiries.length : certificates.length}</div>
-            <div className="text-sm text-slate-500 mt-1">Total {activeTab === 'inquiries' ? 'Inquiries' : 'Requests'}</div>
+            <div className="text-3xl font-bold text-slate-800">
+              {activeTab === 'inquiries' ? inquiries.length : activeTab === 'certificates' ? certificates.length : gallery.length}
+            </div>
+            <div className="text-sm text-slate-500 mt-1">
+              Total {activeTab === 'inquiries' ? 'Inquiries' : activeTab === 'certificates' ? 'Requests' : 'Images'}
+            </div>
           </div>
           <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
             <div className="flex items-center justify-between mb-4">
@@ -1215,7 +1269,7 @@ const AdminDashboard = () => {
               <span className="text-xs font-bold text-red-600 bg-red-50 px-2 py-1 rounded-full">RECENT</span>
             </div>
             <div className="text-3xl font-bold text-slate-800">
-              {(activeTab === 'inquiries' ? inquiries : certificates).filter(i => {
+              {(activeTab === 'inquiries' ? inquiries : activeTab === 'certificates' ? certificates : gallery).filter(i => {
                 const date = new Date(i.created_at);
                 const today = new Date();
                 return date.toDateString() === today.toDateString();
@@ -1237,7 +1291,9 @@ const AdminDashboard = () => {
 
         <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
           <div className="p-6 border-b border-slate-100 flex flex-col md:flex-row justify-between items-center gap-4">
-            <h3 className="text-xl font-bold text-slate-800">{activeTab === 'inquiries' ? 'Admission Inquiries' : 'Certificate Requests'}</h3>
+            <h3 className="text-xl font-bold text-slate-800">
+              {activeTab === 'inquiries' ? 'Admission Inquiries' : activeTab === 'certificates' ? 'Certificate Requests' : 'Gallery Management'}
+            </h3>
             <div className="relative w-full md:w-72">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
               <input 
@@ -1253,6 +1309,7 @@ const AdminDashboard = () => {
           <div className="overflow-x-auto">
             {activeTab === 'inquiries' ? (
               <table className="w-full text-left">
+                {/* ... existing inquiries table ... */}
                 <thead>
                   <tr className="bg-slate-50 text-slate-500 text-xs font-bold uppercase tracking-wider">
                     <th className="px-6 py-4">Student Name</th>
@@ -1295,7 +1352,7 @@ const AdminDashboard = () => {
                   )}
                 </tbody>
               </table>
-            ) : (
+            ) : activeTab === 'certificates' ? (
               <table className="w-full text-left">
                 <thead>
                   <tr className="bg-slate-50 text-slate-500 text-xs font-bold uppercase tracking-wider">
@@ -1330,6 +1387,86 @@ const AdminDashboard = () => {
                   )}
                 </tbody>
               </table>
+            ) : (
+              <div className="p-8">
+                <form onSubmit={handleAddImage} className="mb-12 bg-slate-50 p-6 rounded-2xl border border-slate-100">
+                  <div className="flex justify-between items-start mb-6">
+                    <h4 className="text-lg font-bold text-slate-800">Add New Gallery Image</h4>
+                    <div className="text-[10px] text-slate-500 bg-white px-3 py-1.5 rounded-lg border border-slate-200 max-w-xs">
+                      <span className="font-bold text-red-600 block mb-1">TIP:</span>
+                      Use public image URLs from Google Photos, Imgur, or your school's social media posts.
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                    <div>
+                      <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2">Image URL</label>
+                      <input 
+                        required
+                        type="url" 
+                        value={newImage.url}
+                        onChange={(e) => setNewImage({...newImage, url: e.target.value})}
+                        className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-red-600 transition-colors text-sm" 
+                        placeholder="https://example.com/image.jpg"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2">Caption</label>
+                      <input 
+                        type="text" 
+                        value={newImage.caption}
+                        onChange={(e) => setNewImage({...newImage, caption: e.target.value})}
+                        className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-red-600 transition-colors text-sm" 
+                        placeholder="Image description"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2">Category</label>
+                      <select 
+                        value={newImage.category}
+                        onChange={(e) => setNewImage({...newImage, category: e.target.value})}
+                        className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-red-600 transition-colors text-sm"
+                      >
+                        <option value="General">General</option>
+                        <option value="Academics">Academics</option>
+                        <option value="Sports">Sports</option>
+                        <option value="Events">Events</option>
+                        <option value="Facilities">Facilities</option>
+                      </select>
+                    </div>
+                  </div>
+                  <button 
+                    disabled={isAddingImage}
+                    type="submit"
+                    className="bg-red-600 text-white font-bold px-8 py-3 rounded-xl hover:bg-red-700 transition-all shadow-lg shadow-red-600/20 uppercase tracking-widest text-xs"
+                  >
+                    {isAddingImage ? 'ADDING...' : 'ADD TO GALLERY'}
+                  </button>
+                </form>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {loading ? (
+                    <div className="col-span-full text-center py-12 text-slate-500">Loading gallery...</div>
+                  ) : filteredGallery.length === 0 ? (
+                    <div className="col-span-full text-center py-12 text-slate-500">No images in gallery.</div>
+                  ) : (
+                    filteredGallery.map((img) => (
+                      <div key={img.id} className="group relative bg-white rounded-2xl overflow-hidden border border-slate-100 shadow-sm hover:shadow-md transition-all">
+                        <div className="aspect-video overflow-hidden">
+                          <img src={img.url} alt={img.caption} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" referrerPolicy="no-referrer" />
+                        </div>
+                        <div className="p-4">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="px-2 py-0.5 bg-slate-100 text-slate-600 rounded text-[10px] font-bold uppercase">{img.category}</span>
+                            <button onClick={() => handleDeleteImage(img.id)} className="text-slate-400 hover:text-red-600 transition-colors"><Trash2 size={16} /></button>
+                          </div>
+                          <p className="text-sm text-slate-800 font-medium truncate">{img.caption || 'No caption'}</p>
+                          <p className="text-[10px] text-slate-400 mt-1">{new Date(img.created_at).toLocaleDateString()}</p>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
             )}
           </div>
         </div>
@@ -1338,10 +1475,125 @@ const AdminDashboard = () => {
   );
 };
 
+const GalleryPage = () => {
+  const [gallery, setGallery] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetchGallery = async () => {
+      try {
+        const res = await fetch('/api/gallery');
+        const data = await res.json();
+        setGallery(data);
+      } catch (error) {
+        console.error('Error fetching gallery:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchGallery();
+    window.scrollTo(0, 0);
+  }, []);
+
+  return (
+    <div className="min-h-screen bg-slate-50">
+      <header className="bg-white border-b border-slate-200 sticky top-0 z-30">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-red-600 rounded-full flex items-center justify-center text-white font-bold text-lg">V</div>
+            <div className="leading-tight">
+              <span className="block text-lg font-bold text-slate-800 tracking-tighter">VIMAL GALLERY</span>
+              <span className="block text-[10px] font-semibold text-slate-500 tracking-widest uppercase">School Life & Events</span>
+            </div>
+          </div>
+          <button 
+            type="button"
+            onClick={() => navigate('/')}
+            className="bg-slate-100 text-slate-700 px-6 py-2.5 rounded-xl text-sm font-bold hover:bg-slate-200 transition-colors flex items-center gap-2"
+          >
+            <ChevronRight className="rotate-180" size={18} />
+            BACK TO HOME
+          </button>
+        </div>
+      </header>
+
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+        <div className="text-center mb-16">
+          <h2 className="text-sm font-bold text-red-600 tracking-widest uppercase mb-4">Visual Journey</h2>
+          <h3 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tighter uppercase">Our School Gallery</h3>
+          <div className="w-20 h-1.5 bg-red-600 mx-auto mt-6"></div>
+        </div>
+
+        {loading ? (
+          <div className="text-center py-24">
+            <div className="animate-spin w-12 h-12 border-4 border-red-600 border-t-transparent rounded-full mx-auto mb-4"></div>
+            <p className="text-slate-500 font-bold">Loading our memories...</p>
+          </div>
+        ) : gallery.length === 0 ? (
+          <div className="text-center py-24 bg-white rounded-3xl border border-slate-100 shadow-sm">
+            <Eye size={48} className="text-slate-300 mx-auto mb-4" />
+            <p className="text-slate-500 font-bold">No images found in the gallery yet.</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+            {gallery.map((img) => (
+              <motion.div 
+                key={img.id}
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="group relative bg-white rounded-3xl overflow-hidden shadow-lg border border-slate-100"
+              >
+                <div className="aspect-square overflow-hidden">
+                  <img 
+                    src={img.url} 
+                    alt={img.caption} 
+                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                    referrerPolicy="no-referrer"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex flex-col justify-end p-6">
+                    <span className="text-red-500 font-bold text-[10px] uppercase tracking-widest mb-1">{img.category}</span>
+                    <p className="text-white font-bold text-sm leading-tight">{img.caption}</p>
+                    <p className="text-white/60 text-[10px] mt-2">{new Date(img.created_at).toLocaleDateString()}</p>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        )}
+      </main>
+      
+      <footer className="bg-white border-t border-slate-200 py-12">
+        <div className="max-w-7xl mx-auto px-4 text-center">
+          <p className="text-slate-500 text-sm">© 2026 Vimal International School. All rights reserved.</p>
+        </div>
+      </footer>
+    </div>
+  );
+};
+
 const MainSite = ({ onAdmissionClick, onContactClick, onApplyClick, scrollToSection }: { onAdmissionClick: () => void, onContactClick: () => void, onApplyClick: (type: string) => void, scrollToSection: (id: string) => void }) => {
+  const [gallery, setGallery] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetchGallery = async () => {
+      try {
+        const res = await fetch('/api/gallery');
+        const data = await res.json();
+        setGallery(data);
+      } catch (error) {
+        console.error('Error fetching gallery:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchGallery();
+  }, []);
+
   const handleViewGallery = () => {
-    // Open gallery in a new window
-    window.open('https://photos.app.goo.gl/your-gallery-link', '_blank');
+    navigate('/gallery');
   };
 
   return (
@@ -1363,6 +1615,33 @@ const MainSite = ({ onAdmissionClick, onContactClick, onApplyClick, scrollToSect
               <div className="w-20 h-1.5 bg-red-600 mx-auto mt-6"></div>
             </div>
 
+            {gallery.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
+                {gallery.slice(0, 6).map((img) => (
+                  <motion.div 
+                    key={img.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    className="group relative bg-white rounded-3xl overflow-hidden shadow-xl border border-slate-100"
+                  >
+                    <div className="aspect-[4/3] overflow-hidden">
+                      <img 
+                        src={img.url} 
+                        alt={img.caption} 
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                        referrerPolicy="no-referrer"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex flex-col justify-end p-6">
+                        <span className="text-red-500 font-bold text-[10px] uppercase tracking-widest mb-1">{img.category}</span>
+                        <p className="text-white font-bold text-sm">{img.caption}</p>
+                      </div>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            ) : null}
+
             <div className="max-w-2xl mx-auto">
               <div className="bg-white p-10 md:p-16 rounded-[3rem] shadow-2xl border border-slate-100 flex flex-col items-center text-center relative overflow-hidden group">
                 <div className="absolute top-0 left-0 w-full h-2 bg-red-600"></div>
@@ -1379,7 +1658,7 @@ const MainSite = ({ onAdmissionClick, onContactClick, onApplyClick, scrollToSect
                     className="max-w-md w-full bg-red-600 text-white font-black py-5 rounded-2xl hover:bg-red-700 transition-all shadow-xl shadow-red-600/20 uppercase tracking-widest text-sm flex items-center justify-center gap-2"
                   >
                     <Eye size={20} />
-                    VIEW GALLERY
+                    VIEW FULL GALLERY
                   </button>
                 </div>
               </div>
@@ -1427,6 +1706,7 @@ export default function App() {
             scrollToSection={scrollToSection}
           />
         } />
+        <Route path="/gallery" element={<GalleryPage />} />
         <Route path="/admin" element={<AdminDashboard />} />
       </Routes>
       <AdmissionModal isOpen={showAdmission} onClose={() => setShowAdmission(false)} />
