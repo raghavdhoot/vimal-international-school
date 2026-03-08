@@ -789,6 +789,25 @@ const AdminDashboard = () => {
     }
   };
 
+  const handleDelete = async (id: number) => {
+    if (!window.confirm('Are you sure you want to delete this inquiry?')) return;
+    
+    try {
+      const response = await fetch(`/api/inquiries/${id}`, {
+        method: 'DELETE'
+      });
+      
+      if (response.ok) {
+        setInquiries(prev => prev.filter(i => i.id !== id));
+      } else {
+        alert('Failed to delete inquiry');
+      }
+    } catch (error) {
+      console.error('Error deleting inquiry:', error);
+      alert('An error occurred while deleting');
+    }
+  };
+
   const filteredInquiries = inquiries.filter(inquiry => 
     inquiry.student_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     inquiry.father_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -980,7 +999,11 @@ const AdminDashboard = () => {
                           <button className="p-2 text-slate-400 hover:text-blue-600 transition-colors" title="View Details">
                             <Eye size={18} />
                           </button>
-                          <button className="p-2 text-slate-400 hover:text-red-600 transition-colors" title="Delete">
+                          <button 
+                            onClick={() => handleDelete(inquiry.id)}
+                            className="p-2 text-slate-400 hover:text-red-600 transition-colors" 
+                            title="Delete"
+                          >
                             <Trash2 size={18} />
                           </button>
                         </div>
