@@ -53,6 +53,24 @@ initDb().catch(console.error);
 
 const app = express();
 
+app.use(cors());
+app.use(express.json());
+
+// Request logger
+app.use((req, res, next) => {
+  console.log(`${req.method} ${req.url}`);
+  next();
+});
+
+// Root API route
+app.get("/api", (req, res) => {
+  res.json({ 
+    message: "Vimal International School API",
+    status: "online",
+    time: new Date().toISOString()
+  });
+});
+
 // Manual init route
 app.get("/api/init-db", async (req, res) => {
   const result = await initDb();
@@ -73,15 +91,6 @@ app.get("/api/init-db", async (req, res) => {
       error: result.error
     });
   }
-});
-
-app.use(cors());
-app.use(express.json());
-
-// Request logger
-app.use((req, res, next) => {
-  console.log(`${req.method} ${req.url}`);
-  next();
 });
 
 // API Route for form submission
@@ -147,6 +156,15 @@ app.delete("/api/inquiries/:id", async (req, res) => {
     console.error("Error deleting inquiry:", error);
     res.status(500).json({ success: false, error: "Failed to delete inquiry" });
   }
+});
+
+// Catch-all for other API routes
+app.all("/api/*", (req, res) => {
+  res.status(404).json({ 
+    error: "API Route Not Found", 
+    path: req.path, 
+    method: req.method 
+  });
 });
 
 async function startServer() {
