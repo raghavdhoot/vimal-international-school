@@ -49,6 +49,15 @@ async function initDb() {
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `;
+    await sql`
+      CREATE TABLE IF NOT EXISTS gallery (
+        id SERIAL PRIMARY KEY,
+        url TEXT NOT NULL,
+        caption TEXT,
+        category TEXT DEFAULT 'General',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `;
     console.log("Database table initialized (Postgres)");
     dbInitialized = true;
     return { success: true, message: "Database table initialized successfully" };
@@ -210,6 +219,49 @@ app.delete("/api/inquiries/:id", async (req, res) => {
   } catch (error) {
     console.error("Error deleting inquiry:", error);
     res.status(500).json({ success: false, error: "Failed to delete inquiry" });
+  }
+});
+
+// API Route for gallery
+app.post("/api/gallery", async (req, res) => {
+  await initDb();
+  const { url, caption, category } = req.body;
+  
+  if (!url) {
+    return res.status(400).json({ error: "Image URL is required" });
+  }
+
+  try {
+    const result = await sql`
+      INSERT INTO gallery (url, caption, category)
+      VALUES (${url}, ${caption}, ${category || 'General'})
+      RETURNING *
+    `;
+    res.status(201).json(result.rows[0]);
+  } catch (err: any) {
+    console.error("Error saving gallery image:", err);
+    res.status(500).json({ error: "Failed to save image", details: err.message });
+  }
+});
+
+app.get("/api/gallery", async (req, res) => {
+  await initDb();
+  try {
+    const result = await sql`SELECT * FROM gallery ORDER BY created_at DESC`;
+    res.json(result.rows);
+  } catch (err: any) {
+    res.status(500).json({ error: "Failed to fetch gallery images" });
+  }
+});
+
+app.delete("/api/gallery/:id", async (req, res) => {
+  await initDb();
+  const { id } = req.params;
+  try {
+    await sql`DELETE FROM gallery WHERE id = ${id}`;
+    res.json({ success: true });
+  } catch (err: any) {
+    res.status(500).json({ error: "Failed to delete image" });
   }
 });
 
